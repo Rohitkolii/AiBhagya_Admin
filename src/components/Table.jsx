@@ -62,7 +62,7 @@ export default function Table({ columns, data }) {
             {columns.map((col, i) => (
               <th
                 key={i}
-                className="px-5 py-3 font-semibold text-sm cursor-pointer select-none"
+                className="px-5 py-3 font-semibold text-sm cursor-pointer select-none text-nowrap"
                 onClick={() => col.sortable && handleSort(col.key)}
               >
                 <div className="flex items-center gap-2">

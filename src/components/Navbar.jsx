@@ -7,7 +7,7 @@ export default function Navbar({ setOpenSidebar }) {
       <h1 className="text-xl font-bold text-black">AIBHAGYA</h1>
 
       <button
-        className="lg:hidden text-2xl"
+        className="lg:hidden text-2xl cursor-pointer"
         onClick={() => setOpenSidebar(prev => !prev)}
       >
         ☰

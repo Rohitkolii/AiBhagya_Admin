@@ -18,6 +18,19 @@
   }
 }
 
+body{
+  overflow: hidden;
+}
+
+/* Hide scrollbar but keep scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none; /* IE & Edge */
+  scrollbar-width: none; /* Firefox */
+}
 
 /* h1, h2, h3, h4 {
   @apply font-semibold text-gray-800;

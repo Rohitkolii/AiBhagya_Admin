@@ -1,25 +1,63 @@
 import { useState } from "react";
 import { useFormik } from "formik";
 import * as Yup from "yup";
+import { AddReportCategories, UpdateReportCategory } from "../utils/api";
 
-export default function AddItemForm() {
+export default function AddItemForm({ reportCategory, setReportCategory }) {
   const [showForm, setShowForm] = useState(false);
 
   const formik = useFormik({
-    initialValues: {
-      title: "",
-      description: "",
-      fullDescription: "",
-      imagePreview: "",
-      image : null
+    initialValues: reportCategory || {
+      category: "",
+      short_desc: "",
+      desc: "",
+      imagepreview: "",
+      image: null,
     },
+    enableReinitialize: true,
     validationSchema: Yup.object({
-      title: Yup.string().required("Title is required"),
-      description: Yup.string().required("Description is required"),
-      fullDescription: Yup.string().required("Full description is required"),
-      image: Yup.mixed().required("Image is required"),
+      category: Yup.string().required("Title is required"),
+      short_desc: Yup.string().required("Description is required"),
+      desc: Yup.string().required("Full short_desc is required"),
+      image: Yup.mixed().when("reportCategory", {
+        is: (reportCategory) => reportCategory?.isEdit === false,
+        then: (schema) => schema.required("Image is required"),
+        otherwise: (schema) => schema.notRequired(),
+      }),
+
+      // image: Yup.mixed().required("Image is required"),
     }),
-    onSubmit: (values) => {
+    onSubmit: async (values) => {
+      const formData = new FormData();
+      formData.append("category", values.category);
+      formData.append("short_desc", values.short_desc);
+      formData.append("desc", values.desc);
+      formData.append("image", values.image);
+
+      if (reportCategory) {
+        formData.delete("image", "");
+        try {
+          const response = await UpdateReportCategory(
+            formData,
+            reportCategory?.id
+          );
+          if (response.status) {
+            console.log(response.status || "Data Added");
+          }
+        } catch (error) {
+          console.error("Error in AddReportCategories: ", error);
+        }
+      } else {
+        try {
+          const response = await AddReportCategories(formData);
+          if (response.status) {
+            console.log(response.status || "Data Added");
+          }
+        } catch (error) {
+          console.error("Error in AddReportCategories: ", error);
+        }
+      }
+
       console.log("Form Submitted:", values);
       setShowForm(false);
       formik.resetForm();
@@ -56,17 +94,21 @@ export default function AddItemForm() {
         <form onSubmit={formik.handleSubmit} className="grid gap-4 mt-2">
           {/* Title */}
           <div>
-            <label className="block text-sm font-medium mb-1">Report Category Title</label>
+            <label className="block text-sm font-medium mb-1">
+              Report Category Title
+            </label>
             <input
               type="text"
-              name="title"
+              name="category"
               className="w-full px-4 py-2 border border-gray-300 shadow rounded-lg outline-none focus:border-primary"
-              value={formik.values.title}
+              value={formik.values.category}
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
             />
-            {formik.errors.title && formik.touched.title && (
-              <p className="text-red-500 text-sm mt-1">{formik.errors.title}</p>
+            {formik.errors.category && formik.touched.category && (
+              <p className="text-red-500 text-sm mt-1">
+                {formik.errors.category}
+              </p>
             )}
           </div>
 
@@ -80,15 +122,15 @@ export default function AddItemForm() {
                 </label>
                 <input
                   type="text"
-                  name="description"
+                  name="short_desc"
                   className="w-full px-4 py-2 border border-gray-300 shadow rounded-lg outline-none focus:border-primary"
-                  value={formik.values.description}
+                  value={formik.values.short_desc}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 />
-                {formik.errors.description && formik.touched.description && (
+                {formik.errors.short_desc && formik.touched.short_desc && (
                   <p className="text-red-500 text-sm mt-1">
-                    {formik.errors.description}
+                    {formik.errors.short_desc}
                   </p>
                 )}
               </div>
@@ -98,20 +140,19 @@ export default function AddItemForm() {
                   Full Description
                 </label>
                 <textarea
-                  name="fullDescription"
+                  name="desc"
                   rows="4"
                   className="w-full px-4 py-2 border border-gray-300 shadow rounded-lg outline-none focus:border-primary resize-none"
-                  value={formik.values.fullDescription}
+                  value={formik.values.desc}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 ></textarea>
 
-                {formik.errors.fullDescription &&
-                  formik.touched.fullDescription && (
-                    <p className="text-red-500 text-sm mt-1">
-                      {formik.errors.fullDescription}
-                    </p>
-                  )}
+                {formik.errors.desc && formik.touched.desc && (
+                  <p className="text-red-500 text-sm mt-1">
+                    {formik.errors.desc}
+                  </p>
+                )}
               </div>
             </div>
 
@@ -121,9 +162,9 @@ export default function AddItemForm() {
 
               <label className="w-full h-40 md:h-[190px] border-2 border-dashed border-gray-300 rounded-xl flex flex-col items-center justify-center cursor-pointer hover:border-primary hover:bg-primary/5 transition">
                 {/* Preview */}
-                {formik.values.imagePreview ? (
+                {formik.values.imagepreview ? (
                   <img
-                    src={formik.values.imagePreview}
+                    src={formik.values.imagepreview}
                     alt="Preview"
                     className="w-full h-full object-cover rounded-xl"
                   />
@@ -158,7 +199,7 @@ export default function AddItemForm() {
 
                     if (file) {
                       const previewUrl = URL.createObjectURL(file);
-                      formik.setFieldValue("imagePreview", previewUrl);
+                      formik.setFieldValue("imagepreview", previewUrl);
                     }
                   }}
                 />
@@ -173,21 +214,33 @@ export default function AddItemForm() {
           </div>
 
           <div className="flex gap-2 items-center">
-              {/* Reset */}
+            {/* Reset */}
             <button
-            onClick={formik.handleReset}
-            type="button"
-            className="cursor-pointer px-4 py-2 bg-black text-white rounded-lg shadow hover:opacity-80 transition w-fit"
+              onClick={() => {
+                formik.resetForm(), setReportCategory(null);
+              }}
+              type="button"
+              className="cursor-pointer px-4 py-2 bg-black text-white rounded-lg shadow hover:opacity-80 transition w-fit"
             >
-            Reset
-          </button>
-              {/* Submit */}
-          <button
-            type="submit"
-            className="cursor-pointer px-4 py-2 bg-primary text-white rounded-lg shadow hover:opacity-90 transition w-fit"
-          >
-            Submit
-          </button>
+              Reset
+            </button>
+            {/* Submit */}
+
+            {reportCategory ? (
+              <button
+                type="submit"
+                className="cursor-pointer px-4 py-2 bg-primary text-white rounded-lg shadow hover:opacity-90 transition w-fit"
+              >
+                Update
+              </button>
+            ) : (
+              <button
+                type="submit"
+                className="cursor-pointer px-4 py-2 bg-primary text-white rounded-lg shadow hover:opacity-90 transition w-fit"
+              >
+                Submit
+              </button>
+            )}
           </div>
         </form>
       </div>
